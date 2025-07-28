@@ -147,22 +147,26 @@
             { facingMode: "environment" },
             { fps: 10, qrbox: 250 },
             async (decodedText) => {
-              await scanner.stop();
-              await scanner.clear();
+              try {
+                await scanner.stop();
+                await scanner.clear();
+              } catch (e) {
+                console.error("読み取り後のカメラ停止失敗:", e);
+              }
+              isScanning = false;
               readerDiv.style.display = "none";
               scanBtn.textContent = "🔍 読み取り開始";
               scanBtn.classList.remove("scan-stop");
               scanBtn.classList.add("scan-start");
               scanBtn.disabled = false;
-              isScanning = false;
               saveToHistory(decodedText);
             },
             (error) => {}
           );
           isScanning = true;
         } catch (e) {
-          scanBtn.disabled = false;
           console.error("カメラ起動エラー：", e);
+          scanBtn.disabled = false;
         }
       } else {
         try {
@@ -171,12 +175,12 @@
         } catch (e) {
           console.error("カメラ停止エラー：", e);
         }
+        isScanning = false;
         readerDiv.style.display = "none";
         scanBtn.textContent = "🔍 読み取り開始";
         scanBtn.classList.remove("scan-stop");
         scanBtn.classList.add("scan-start");
         scanBtn.disabled = false;
-        isScanning = false;
       }
     }
 
