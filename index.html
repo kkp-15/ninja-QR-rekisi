@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRれきし帳 📖</title>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-2LM85GJN0L');
+  </script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f4f7f9;
+      padding: 1rem;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.8rem 1.2rem;
+      font-size: 1rem;
+      margin: 0.5rem 0.2rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .start-btn {
+      background-color: #4caf50;
+      color: white;
+    }
+    .delete-all-btn {
+      background-color: #e53935;
+      color: white;
+    }
+    .history-item {
+      background: white;
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border-left: 5px solid #2196f3;
+      border-radius: 5px;
+    }
+    .small-btn {
+      margin-left: 0.5rem;
+      font-size: 0.9rem;
+      padding: 0.4rem 0.6rem;
+    }
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.9rem;
+    }
+    footer a {
+      color: #1d72b8;
+      text-decoration: none;
+    }
+  </style>
+
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+  <h1>📖 QRれきし帳</h1>
+  <div id="reader" style="width: 100%; max-width: 400px; margin: auto;"></div>
+
+  <div style="text-align:center;">
+    <button class="start-btn" onclick="startScanner()">📡 読み取り開始</button>
+    <button class="delete-all-btn" onclick="clearHistory()">🗑️ 全履歴削除</button>
+  </div>
+
+  <h2>📋 読み取り履歴</h2>
+  <div id="history"></div>
+
+  <footer>
+    🐦 <a href="https://x.com/kkp_webninja" target="_blank">@kkp_webninja</a>
+  </footer>
+
+  <script>
+    const reader = new Html5Qrcode("reader");
+    let isScanning = false;
+
+    function startScanner() {
+      if (isScanning) return;
+      isScanning = true;
+      Html5Qrcode.getCameras().then(devices => {
+        const cameraId = devices[0].id;
+        reader.start(
+          cameraId,
+          { fps: 10, qrbox: 250 },
+          qrCodeMessage => {
+            saveToHistory(qrCodeMessage);
+            reader.stop();
+            isScanning = false;
+          },
+          error => {}
+        ).catch(err => {
+          alert("カメラの起動に失敗しました：" + err);
+          isScanning = false;
+        });
+      });
+    }
+
+    function saveToHistory(content) {
+      const now = new Date();
+      const timestamp = now.toLocaleString();
+      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+      history.unshift({ content, timestamp });
+      localStorage.setItem("qrHistory", JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+      const container = document.getElementById("history");
+      container.innerHTML = "";
+      history.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+        const isUrl = item.content.startsWith("http");
+        div.innerHTML = `
+          <div><strong>${item.timestamp}</strong></div>
+          <div style="word-break: break-all;">${item.content}</div>
+          <div style="margin-top:0.5rem;">
+            ${isUrl 
+              ? `<button class="small-btn" onclick="window.open('${item.content}', '_blank')">🔗 アクセス</button>`
+              : `<button class="small-btn" onclick="copyText('${item.content}')">📋 コピー</button>`
+            }
+            <button class="small-btn" onclick="deleteEntry(${index})">❌ 削除</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("コピーしました");
+      });
+    }
+
+    function deleteEntry(index) {
+      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+      history.splice(index, 1);
+      localStorage.setItem("qrHistory", JSON.stringify(history));
+      renderHistory();
+    }
+
+    function clearHistory() {
+      if (confirm("すべての履歴を削除しますか？")) {
+        localStorage.removeItem("qrHistory");
+        renderHistory();
+      }
+    }
+
+    renderHistory();
+  </script>
+</body>
+</html>
