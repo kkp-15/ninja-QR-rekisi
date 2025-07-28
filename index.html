@@ -113,7 +113,7 @@
     <div class="scroll-container">
       <table class="history-table" id="historyTable">
         <thead>
-          <tr><th>日時</th><th>内容</th><th>読み取り</th><th>操作</th></tr>
+          <tr><th>日時</th><th>内容</th><th>状態</th><th>操作</th></tr>
         </thead>
         <tbody id="historyBody">
           <tr><td colspan="4" style="text-align:center; color: #888;">読み取り履歴がまだありません</td></tr>
@@ -178,8 +178,9 @@
     function saveToHistory(text) {
       const now = new Date().toLocaleString();
       const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
-      const count = history.filter(h => h.text === text).length + 1;
-      history.push({ time: now, text: text, count });
+      const exists = history.some(h => h.text === text);
+      const status = exists ? "既に存在" : "新規";
+      history.push({ time: now, text: text, status });
       localStorage.setItem("qrHistory", JSON.stringify(history));
       currentPage = 1;
       updateHistoryTable();
@@ -203,7 +204,7 @@
         tr.innerHTML = `
           <td>${entry.time}</td>
           <td>${entry.text}</td>
-          <td>${entry.count}回目</td>
+          <td>${entry.status}</td>
           <td>
             ${isLink ? `<button class="action-btn access-btn" onclick="window.open('${entry.text}', '_blank')">アクセス</button>` : ""}
             <button class="action-btn copy-btn" onclick="navigator.clipboard.writeText('${entry.text}')">コピー</button>
