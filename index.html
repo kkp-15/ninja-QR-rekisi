@@ -155,6 +155,15 @@
       }
     }
 
+    function isValidURL(str) {
+      try {
+        new URL(str);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
     function saveToHistory(text) {
       const now = new Date().toLocaleString();
       const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
@@ -173,13 +182,14 @@
         return;
       }
       history.forEach((entry, index) => {
+        const isLink = isValidURL(entry.text);
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${entry.time}</td>
           <td>${entry.text}</td>
           <td>${entry.count}回目</td>
           <td>
-            <button class="action-btn access-btn" onclick="window.open('${entry.text}', '_blank')">アクセス</button>
+            ${isLink ? `<button class="action-btn access-btn" onclick="window.open('${entry.text}', '_blank')">アクセス</button>` : ""}
             <button class="action-btn copy-btn" onclick="navigator.clipboard.writeText('${entry.text}')">コピー</button>
             <button class="action-btn delete-btn" onclick="deleteEntry(${index})">削除</button>
           </td>
