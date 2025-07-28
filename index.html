@@ -1,14 +1,10 @@
-<!DOCTYPE html>
-<html lang="ja">
+<!DOCTYPE html><html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>🔍QRれきし帳（QRコード読み取り・履歴保存Webアプリ）</title>
   <meta name="description" content="QRコードを読み取って、自動で履歴を保存・管理できる無料Webアプリ。スマホ対応、削除・コピー・アクセスもワンタップで簡単操作！">
-  <meta name="keywords" content="QRコード, QRコード読み取り, 履歴保存, 無料アプリ, スマホ対応, Webアプリ, ログ管理, スキャン履歴">
-
-  <!-- Google Analytics -->
+  <meta name="keywords" content="QRコード, QR読み取り, 履歴保存, 無料アプリ, スマホ対応, Webアプリ, QRログ">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -16,7 +12,6 @@
     gtag('js', new Date());
     gtag('config', 'G-2LM85GJN0L');
   </script>
-
   <style>
     body {
       font-family: "Hiragino Kaku Gothic ProN", sans-serif;
@@ -24,15 +19,13 @@
       padding: 1rem;
       margin: 0;
       color: #333;
-      padding-bottom: 80px; /* フッター分の余白 */
+      padding-bottom: 80px;
     }
-
     h1 {
       text-align: center;
       font-size: 1.8rem;
       margin: 1rem 0;
     }
-
     button {
       padding: 0.5rem 1rem;
       font-size: 0.9rem;
@@ -41,58 +34,29 @@
       border-radius: 6px;
       cursor: pointer;
     }
-
-    .toggle-scan-btn.scan-start {
-      background-color: #2196f3;
-      color: white;
-    }
-
-    .toggle-scan-btn.scan-stop {
-      background-color: #f44336;
-      color: white;
-    }
-
-    .delete-all-btn {
-      background-color: #9e9e9e;
-      color: white;
-    }
-
-    .scroll-wrapper {
-      margin-top: 1rem;
-    }
-
-    .scroll-hint {
-      text-align: center;
-      font-size: 0.8rem;
-      color: #777;
-      margin-bottom: 0.3rem;
-    }
-
+    .toggle-scan-btn.scan-start { background-color: #2196f3; color: white; }
+    .toggle-scan-btn.scan-stop { background-color: #f44336; color: white; }
+    .delete-all-btn { background-color: #9e9e9e; color: white; }
+    .scroll-wrapper { margin-top: 1rem; }
+    .scroll-hint { text-align: center; font-size: 0.8rem; color: #777; margin-bottom: 0.3rem; }
     .scroll-container {
       overflow-x: auto;
       border: 1px dashed #ccc;
       padding-bottom: 0.5rem;
     }
-
     .history-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.85rem;
       min-width: 600px;
     }
-
-    .history-table th,
-    .history-table td {
+    .history-table th, .history-table td {
       border: 1px solid #ccc;
       padding: 0.5rem;
       word-break: break-word;
       text-align: left;
     }
-
-    .history-table th {
-      background-color: #e3f2fd;
-    }
-
+    .history-table th { background-color: #e3f2fd; }
     .action-btn {
       font-size: 0.8rem;
       padding: 0.3rem 0.5rem;
@@ -101,25 +65,9 @@
       border: none;
       cursor: pointer;
     }
-
-    .access-btn {
-      background-color: #e8f5e9;
-      color: #388e3c;
-      border: 1px solid #388e3c;
-    }
-
-    .copy-btn {
-      background-color: #fff3e0;
-      color: #f57c00;
-      border: 1px solid #f57c00;
-    }
-
-    .delete-btn {
-      background-color: #ffebee;
-      color: #d32f2f;
-      border: 1px solid #d32f2f;
-    }
-
+    .access-btn { background-color: #e8f5e9; color: #388e3c; border: 1px solid #388e3c; }
+    .copy-btn { background-color: #fff3e0; color: #f57c00; border: 1px solid #f57c00; }
+    .delete-btn { background-color: #ffebee; color: #d32f2f; border: 1px solid #d32f2f; }
     footer {
       position: fixed;
       bottom: 0;
@@ -133,56 +81,39 @@
       backdrop-filter: blur(4px);
       z-index: 999;
     }
-
     footer a {
       color: #1d72b8;
       text-decoration: none;
     }
-
-    #reader {
-      max-width: 400px;
-      margin: 1rem auto;
-    }
+    #reader { max-width: 400px; margin: 1rem auto; }
   </style>
-
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
   <h1>🔍QRれきし帳（QRコード読み取り）</h1>
   <div id="reader"></div>
-
   <div style="text-align:center;">
     <button id="scanBtn" class="toggle-scan-btn scan-start" onclick="toggleScanner()">🔍 読み取り開始</button>
     <button class="delete-all-btn" onclick="clearHistory()">🗑️ 全履歴削除</button>
   </div>
-
   <h2>📋 読み取り履歴</h2>
-
   <div class="scroll-wrapper">
     <div class="scroll-hint">← スクロールできます →</div>
     <div class="scroll-container">
       <table class="history-table" id="historyTable">
         <thead>
-          <tr>
-            <th>日時</th>
-            <th>内容</th>
-            <th>回数</th>
-            <th>操作</th>
-          </tr>
+          <tr><th>日時</th><th>内容</th><th>読み取り</th><th>操作</th></tr>
         </thead>
         <tbody id="historyBody"></tbody>
       </table>
     </div>
   </div>
-
   <footer>
     X <a href="https://x.com/kkp_webninja" target="_blank">@kkp_webninja</a>
   </footer>
-
   <script>
     const reader = new Html5Qrcode("reader");
     let isScanning = false;
-
     function toggleScanner() {
       const btn = document.getElementById("scanBtn");
       if (!isScanning) {
@@ -199,7 +130,7 @@
             error => {}
           ).then(() => {
             isScanning = true;
-            btn.textContent = "🔴 読み取り中止";
+            btn.textContent = "🔴 読み取中止";
             btn.classList.remove("scan-start");
             btn.classList.add("scan-stop");
           });
@@ -210,7 +141,6 @@
         stopScanner();
       }
     }
-
     function stopScanner() {
       const btn = document.getElementById("scanBtn");
       reader.stop().then(() => {
@@ -220,7 +150,6 @@
         btn.classList.add("scan-start");
       });
     }
-
     function saveToHistory(content) {
       const now = new Date();
       const timestamp = now.toLocaleString();
@@ -229,7 +158,6 @@
       localStorage.setItem("qrHistory", JSON.stringify(history));
       renderHistory();
     }
-
     function renderHistory() {
       const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
       const body = document.getElementById("historyBody");
@@ -243,15 +171,14 @@
       }
       history.forEach((item, index) => {
         const tr = document.createElement("tr");
-        const countDisplay = item._count > 1 ? `🔁 ${item._count}回目` : "";
+        const countDisplay = item._count > 1 ? `🔁 ${item._count}回目の読み取り` : "";
         const isUrl = item.content.startsWith("http");
-
         tr.innerHTML = `
           <td>${item.timestamp}</td>
           <td>${item.content}</td>
           <td>${countDisplay}</td>
           <td>
-            ${isUrl 
+            ${isUrl
               ? `<button class="action-btn access-btn" onclick="window.open('${item.content}', '_blank')">🔗 アクセス</button>`
               : `<button class="action-btn copy-btn" onclick="copyText('${item.content}')">📋 コピー</button>`}
             <button class="action-btn delete-btn" onclick="deleteEntry(${index})">❌ 削除</button>
@@ -260,27 +187,23 @@
         body.appendChild(tr);
       });
     }
-
     function copyText(text) {
       navigator.clipboard.writeText(text).then(() => {
         alert("コピーしました");
       });
     }
-
     function deleteEntry(index) {
       const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
       history.splice(index, 1);
       localStorage.setItem("qrHistory", JSON.stringify(history));
       renderHistory();
     }
-
     function clearHistory() {
       if (confirm("すべての履歴を削除しますか？")) {
         localStorage.removeItem("qrHistory");
         renderHistory();
       }
     }
-
     renderHistory();
   </script>
 </body>
