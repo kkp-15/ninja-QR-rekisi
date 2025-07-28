@@ -148,6 +148,7 @@
             { fps: 10, qrbox: 250 },
             async (decodedText) => {
               await scanner.stop();
+              await scanner.clear();
               readerDiv.style.display = "none";
               scanBtn.textContent = "🔍 読み取り開始";
               scanBtn.classList.remove("scan-stop");
@@ -161,11 +162,15 @@
           isScanning = true;
         } catch (e) {
           scanBtn.disabled = false;
+          console.error("カメラ起動エラー：", e);
         }
       } else {
         try {
           await scanner.stop();
-        } catch (e) {}
+          await scanner.clear();
+        } catch (e) {
+          console.error("カメラ停止エラー：", e);
+        }
         readerDiv.style.display = "none";
         scanBtn.textContent = "🔍 読み取り開始";
         scanBtn.classList.remove("scan-stop");
