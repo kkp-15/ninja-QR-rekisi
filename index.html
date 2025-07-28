@@ -27,17 +27,15 @@
       text-align: center;
       font-size: 2rem;
       margin: 1rem 0;
-      color: #333;
     }
 
     button {
-      padding: 0.8rem 1.4rem;
-      font-size: 1rem;
-      margin: 0.4rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      margin: 0.3rem;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
     }
 
     .toggle-scan-btn.scan-start {
@@ -55,48 +53,53 @@
       color: white;
     }
 
-    .delete-all-btn:hover {
-      background-color: #757575;
+    .scroll-wrapper {
+      margin-top: 1rem;
     }
 
-    .history-item {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-left: 5px solid #2196f3;
-      padding: 1rem;
-      margin: 0.5rem 0;
-      border-radius: 6px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    .scroll-hint {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #777;
+      margin-bottom: 0.3rem;
     }
 
-    .small-btn {
-      margin-right: 0.5rem;
+    .scroll-container {
+      overflow-x: auto;
+      border: 1px dashed #ccc;
+      padding-bottom: 0.5rem;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
       font-size: 0.85rem;
-      padding: 0.4rem 0.8rem;
-      border-radius: 5px;
+      min-width: 600px;
     }
 
-    .access-btn {
-      background-color: #4caf50;
-      color: white;
+    .history-table th,
+    .history-table td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      word-break: break-word;
+      text-align: left;
     }
 
-    .copy-btn {
-      background-color: #ff9800;
-      color: white;
+    .history-table th {
+      background-color: #e3f2fd;
     }
 
-    .delete-btn {
-      background-color: #9e9e9e;
-      color: white;
+    .action-btn {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      margin-right: 0.3rem;
+      cursor: pointer;
     }
 
-    h2 {
-      font-size: 1.2rem;
-      margin-top: 2rem;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 0.3rem;
-    }
+    .access-btn { color: #4caf50; }
+    .copy-btn { color: #ff9800; }
+    .delete-btn { color: #f44336; }
 
     footer {
       text-align: center;
@@ -127,7 +130,23 @@
   </div>
 
   <h2>📋 読み取り履歴</h2>
-  <div id="history"></div>
+
+  <div class="scroll-wrapper">
+    <div class="scroll-hint">← スクロールできます →</div>
+    <div class="scroll-container">
+      <table class="history-table" id="historyTable">
+        <thead>
+          <tr>
+            <th>日時</th>
+            <th>内容</th>
+            <th>回数</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
 
   <footer>
     X <a href="https://x.com/kkp_webninja" target="_blank">@kkp_webninja</a>
@@ -186,24 +205,32 @@
 
     function renderHistory() {
       const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
-      const container = document.getElementById("history");
-      container.innerHTML = "";
+      const body = document.getElementById("historyBody");
+      body.innerHTML = "";
+      const countMap = {};
+      for (let i = history.length - 1; i >= 0; i--) {
+        const item = history[i];
+        const key = item.content;
+        countMap[key] = (countMap[key] || 0) + 1;
+        item._count = countMap[key]; // 逆順でカウント
+      }
       history.forEach((item, index) => {
-        const div = document.createElement("div");
-        div.className = "history-item";
+        const tr = document.createElement("tr");
+        const countDisplay = item._count > 1 ? `🔁 ${item._count}回目` : "";
         const isUrl = item.content.startsWith("http");
-        div.innerHTML = `
-          <div><strong>${item.timestamp}</strong></div>
-          <div style="word-break: break-all; margin: 0.5rem 0;">${item.content}</div>
-          <div>
+
+        tr.innerHTML = `
+          <td>${item.timestamp}</td>
+          <td>${item.content}</td>
+          <td>${countDisplay}</td>
+          <td>
             ${isUrl 
-              ? `<button class="small-btn access-btn" onclick="window.open('${item.content}', '_blank')">🔗 アクセス</button>`
-              : `<button class="small-btn copy-btn" onclick="copyText('${item.content}')">📋 コピー</button>`
-            }
-            <button class="small-btn delete-btn" onclick="deleteEntry(${index})">❌ 削除</button>
-          </div>
+              ? `<button class="action-btn access-btn" title="アクセス" onclick="window.open('${item.content}', '_blank')">🔗</button>`
+              : `<button class="action-btn copy-btn" title="コピー" onclick="copyText('${item.content}')">📋</button>`}
+            <button class="action-btn delete-btn" title="削除" onclick="deleteEntry(${index})">❌</button>
+          </td>
         `;
-        container.appendChild(div);
+        body.appendChild(tr);
       });
     }
 
