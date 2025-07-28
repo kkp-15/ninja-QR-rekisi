@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🔍QRれきし帳</title>
+
+  <title>🔍QRれきし帳（QRコード読み取り・履歴保存Webアプリ）</title>
+  <meta name="description" content="QRコードを読み取って、自動で履歴を保存・管理できる無料Webアプリ。スマホ対応、削除・コピー・アクセスもワンタップで簡単操作！">
+  <meta name="keywords" content="QRコード, QRコード読み取り, 履歴保存, 無料アプリ, スマホ対応, Webアプリ, ログ管理, スキャン履歴">
 
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
@@ -25,7 +28,7 @@
 
     h1 {
       text-align: center;
-      font-size: 2rem;
+      font-size: 1.8rem;
       margin: 1rem 0;
     }
 
@@ -90,16 +93,31 @@
     }
 
     .action-btn {
-      background: none;
-      border: none;
-      font-size: 1rem;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
       margin-right: 0.3rem;
+      border: none;
       cursor: pointer;
     }
 
-    .access-btn { color: #4caf50; }
-    .copy-btn { color: #ff9800; }
-    .delete-btn { color: #f44336; }
+    .access-btn {
+      background-color: #e8f5e9;
+      color: #388e3c;
+      border: 1px solid #388e3c;
+    }
+
+    .copy-btn {
+      background-color: #fff3e0;
+      color: #f57c00;
+      border: 1px solid #f57c00;
+    }
+
+    .delete-btn {
+      background-color: #ffebee;
+      color: #d32f2f;
+      border: 1px solid #d32f2f;
+    }
 
     footer {
       text-align: center;
@@ -121,7 +139,7 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
-  <h1>🔍QRれきし帳</h1>
+  <h1>🔍QRれきし帳（QRコード読み取り）</h1>
   <div id="reader"></div>
 
   <div style="text-align:center;">
@@ -212,7 +230,7 @@
         const item = history[i];
         const key = item.content;
         countMap[key] = (countMap[key] || 0) + 1;
-        item._count = countMap[key]; // 逆順でカウント
+        item._count = countMap[key];
       }
       history.forEach((item, index) => {
         const tr = document.createElement("tr");
@@ -225,9 +243,9 @@
           <td>${countDisplay}</td>
           <td>
             ${isUrl 
-              ? `<button class="action-btn access-btn" title="アクセス" onclick="window.open('${item.content}', '_blank')">🔗</button>`
-              : `<button class="action-btn copy-btn" title="コピー" onclick="copyText('${item.content}')">📋</button>`}
-            <button class="action-btn delete-btn" title="削除" onclick="deleteEntry(${index})">❌</button>
+              ? `<button class="action-btn access-btn" onclick="window.open('${item.content}', '_blank')">🔗 アクセス</button>`
+              : `<button class="action-btn copy-btn" onclick="copyText('${item.content}')">📋 コピー</button>`}
+            <button class="action-btn delete-btn" onclick="deleteEntry(${index})">❌ 削除</button>
           </td>
         `;
         body.appendChild(tr);
