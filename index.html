@@ -124,146 +124,144 @@
   <div class="pagination" id="pagination"></div>
   <footer>
     X <a href="https://x.com/kkp_webninja" target="_blank">@kkp_webninja</a>
-  </footer>  <script>
+  </footer>
+  <script>
     let isScanning = false;
-    let scanner;
+    let scanner = null;
     let currentPage = 1;
-    const entriesPerPage = 20;
+    const entriesPerPage = 20;async function toggleScanner() {
+  const readerDiv = document.getElementById("reader");
+  const scanBtn = document.getElementById("scanBtn");
+  scanBtn.disabled = true;
 
-    async function toggleScanner() {
-      const readerDiv = document.getElementById("reader");
-      const scanBtn = document.getElementById("scanBtn");
-      scanBtn.disabled = true;
+  if (!isScanning) {
+    if (!scanner) scanner = new Html5Qrcode("reader");
+    readerDiv.style.display = "block";
+    scanBtn.textContent = "✖ 読み取り中止";
+    scanBtn.classList.remove("scan-start");
+    scanBtn.classList.add("scan-stop");
 
-      if (!isScanning) {
-        readerDiv.style.display = "block";
-        scanBtn.textContent = "✖ 読み取り中止";
-        scanBtn.classList.remove("scan-start");
-        scanBtn.classList.add("scan-stop");
-
-        scanner = new Html5Qrcode("reader");
-        try {
-          await scanner.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
-            async (decodedText) => {
-              try {
-                await scanner.stop();
-                await scanner.clear();
-              } catch (e) {
-                console.error("読み取り後のカメラ停止失敗:", e);
-              }
-              isScanning = false;
-              readerDiv.style.display = "none";
-              scanBtn.textContent = "🔍 読み取り開始";
-              scanBtn.classList.remove("scan-stop");
-              scanBtn.classList.add("scan-start");
-              scanBtn.disabled = false;
-              saveToHistory(decodedText);
-            },
-            (error) => {}
-          );
-          isScanning = true;
-        } catch (e) {
-          console.error("カメラ起動エラー：", e);
-          scanBtn.disabled = false;
-        }
-      } else {
-        try {
-          await scanner.stop();
-          await scanner.clear();
-        } catch (e) {
-          console.error("カメラ停止エラー：", e);
-        }
-        isScanning = false;
-        readerDiv.style.display = "none";
-        scanBtn.textContent = "🔍 読み取り開始";
-        scanBtn.classList.remove("scan-stop");
-        scanBtn.classList.add("scan-start");
-        scanBtn.disabled = false;
-      }
+    try {
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        async (decodedText) => {
+          await stopScanner();
+          saveToHistory(decodedText);
+        },
+        (error) => {}
+      );
+      isScanning = true;
+    } catch (e) {
+      console.error("カメラ起動エラー：", e);
     }
+    scanBtn.disabled = false;
+  } else {
+    await stopScanner();
+    scanBtn.disabled = false;
+  }
+}
 
-    function isValidURL(str) {
-      try {
-        new URL(str);
-        return true;
-      } catch (_) {
-        return false;
-      }
+async function stopScanner() {
+  const readerDiv = document.getElementById("reader");
+  const scanBtn = document.getElementById("scanBtn");
+  if (scanner && isScanning) {
+    try {
+      await scanner.stop();
+      await scanner.clear();
+    } catch (e) {
+      console.error("カメラ停止エラー：", e);
     }
+    isScanning = false;
+    readerDiv.style.display = "none";
+    scanBtn.textContent = "🔍 読み取り開始";
+    scanBtn.classList.remove("scan-stop");
+    scanBtn.classList.add("scan-start");
+  }
+}
 
-    function saveToHistory(text) {
-      const now = new Date().toLocaleString();
-      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
-      const exists = history.some(h => h.text === text);
-      const status = exists ? "既に存在" : "新規";
-      history.push({ time: now, text: text, status });
-      localStorage.setItem("qrHistory", JSON.stringify(history));
-      currentPage = 1;
+function isValidURL(str) {
+  try {
+    new URL(str);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function saveToHistory(text) {
+  const now = new Date().toLocaleString();
+  const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+  const exists = history.some(h => h.text === text);
+  const status = exists ? "既に存在" : "新規";
+  history.push({ time: now, text: text, status });
+  localStorage.setItem("qrHistory", JSON.stringify(history));
+  currentPage = 1;
+  updateHistoryTable();
+}
+
+function updateHistoryTable() {
+  const history = JSON.parse(localStorage.getItem("qrHistory") || "[]").reverse();
+  const tbody = document.getElementById("historyBody");
+  const start = (currentPage - 1) * entriesPerPage;
+  const end = start + entriesPerPage;
+  const currentPageEntries = history.slice(start, end);
+
+  tbody.innerHTML = "";
+  if (currentPageEntries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #888;">読み取り履歴がまだありません</td></tr>';
+    return;
+  }
+  currentPageEntries.forEach((entry, index) => {
+    const isLink = isValidURL(entry.text);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${entry.time}</td>
+      <td>${entry.text}</td>
+      <td>${entry.status}</td>
+      <td>
+        ${isLink ? `<button class="action-btn access-btn" onclick="window.open('${entry.text}', '_blank')">アクセス</button>` : ""}
+        <button class="action-btn copy-btn" onclick="navigator.clipboard.writeText('${entry.text}')">コピー</button>
+        <button class="action-btn delete-btn" onclick="deleteEntry(${history.length - 1 - (start + index)})">削除</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  renderPagination(history.length);
+}
+
+function renderPagination(totalEntries) {
+  const paginationDiv = document.getElementById("pagination");
+  paginationDiv.innerHTML = "";
+  const totalPages = Math.ceil(totalEntries / entriesPerPage);
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.onclick = () => {
+      currentPage = i;
       updateHistoryTable();
-    }
+    };
+    if (i === currentPage) btn.disabled = true;
+    paginationDiv.appendChild(btn);
+  }
+}
 
-    function updateHistoryTable() {
-      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]").reverse();
-      const tbody = document.getElementById("historyBody");
-      const start = (currentPage - 1) * entriesPerPage;
-      const end = start + entriesPerPage;
-      const currentPageEntries = history.slice(start, end);
+function deleteEntry(index) {
+  const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+  history.splice(index, 1);
+  localStorage.setItem("qrHistory", JSON.stringify(history));
+  updateHistoryTable();
+}
 
-      tbody.innerHTML = "";
-      if (currentPageEntries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #888;">読み取り履歴がまだありません</td></tr>';
-        return;
-      }
-      currentPageEntries.forEach((entry, index) => {
-        const isLink = isValidURL(entry.text);
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${entry.time}</td>
-          <td>${entry.text}</td>
-          <td>${entry.status}</td>
-          <td>
-            ${isLink ? `<button class="action-btn access-btn" onclick="window.open('${entry.text}', '_blank')">アクセス</button>` : ""}
-            <button class="action-btn copy-btn" onclick="navigator.clipboard.writeText('${entry.text}')">コピー</button>
-            <button class="action-btn delete-btn" onclick="deleteEntry(${history.length - 1 - (start + index)})">削除</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-      renderPagination(history.length);
-    }
+function clearHistory() {
+  if (confirm("本当にすべて削除しますか？")) {
+    localStorage.removeItem("qrHistory");
+    updateHistoryTable();
+  }
+}
 
-    function renderPagination(totalEntries) {
-      const paginationDiv = document.getElementById("pagination");
-      paginationDiv.innerHTML = "";
-      const totalPages = Math.ceil(totalEntries / entriesPerPage);
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.textContent = i;
-        btn.onclick = () => {
-          currentPage = i;
-          updateHistoryTable();
-        };
-        if (i === currentPage) btn.disabled = true;
-        paginationDiv.appendChild(btn);
-      }
-    }
+window.onload = updateHistoryTable;
 
-    function deleteEntry(index) {
-      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
-      history.splice(index, 1);
-      localStorage.setItem("qrHistory", JSON.stringify(history));
-      updateHistoryTable();
-    }
-
-    function clearHistory() {
-      if (confirm("本当にすべて削除しますか？")) {
-        localStorage.removeItem("qrHistory");
-        updateHistoryTable();
-      }
-    }
-
-    window.onload = updateHistoryTable;
-  </script></body>
+  </script>
+</body>
 </html>
