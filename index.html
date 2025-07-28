@@ -40,22 +40,23 @@
       transition: background-color 0.3s ease;
     }
 
-    .start-btn {
+    .toggle-scan-btn.scan-start {
       background-color: #2196f3;
       color: white;
     }
 
-    .start-btn:hover {
-      background-color: #1976d2;
-    }
-
-    .delete-all-btn {
+    .toggle-scan-btn.scan-stop {
       background-color: #f44336;
       color: white;
     }
 
+    .delete-all-btn {
+      background-color: #9e9e9e;
+      color: white;
+    }
+
     .delete-all-btn:hover {
-      background-color: #d32f2f;
+      background-color: #757575;
     }
 
     .history-item {
@@ -121,7 +122,7 @@
   <div id="reader"></div>
 
   <div style="text-align:center;">
-    <button class="start-btn" onclick="startScanner()">🔍読み取り開始</button>
+    <button id="scanBtn" class="toggle-scan-btn scan-start" onclick="toggleScanner()">🔍 読み取り開始</button>
     <button class="delete-all-btn" onclick="clearHistory()">🗑️ 全履歴削除</button>
   </div>
 
@@ -136,25 +137,41 @@
     const reader = new Html5Qrcode("reader");
     let isScanning = false;
 
-    function startScanner() {
-      if (isScanning) return;
-      isScanning = true;
-      Html5Qrcode.getCameras().then(devices => {
-        const backCamera = devices.find(d => /back|rear|environment/i.test(d.label));
-        const cameraId = backCamera ? backCamera.id : devices[0].id;
-        reader.start(
-          cameraId,
-          { fps: 10, qrbox: 250 },
-          qrCodeMessage => {
-            saveToHistory(qrCodeMessage);
-            reader.stop();
-            isScanning = false;
-          },
-          error => {}
-        ).catch(err => {
+    function toggleScanner() {
+      const btn = document.getElementById("scanBtn");
+      if (!isScanning) {
+        Html5Qrcode.getCameras().then(devices => {
+          const backCamera = devices.find(d => /back|rear|environment/i.test(d.label));
+          const cameraId = backCamera ? backCamera.id : devices[0].id;
+          reader.start(
+            cameraId,
+            { fps: 10, qrbox: 250 },
+            qrCodeMessage => {
+              saveToHistory(qrCodeMessage);
+              stopScanner();
+            },
+            error => {}
+          ).then(() => {
+            isScanning = true;
+            btn.textContent = "🔴 読み取り中止";
+            btn.classList.remove("scan-start");
+            btn.classList.add("scan-stop");
+          });
+        }).catch(err => {
           alert("カメラの起動に失敗しました：" + err);
-          isScanning = false;
         });
+      } else {
+        stopScanner();
+      }
+    }
+
+    function stopScanner() {
+      const btn = document.getElementById("scanBtn");
+      reader.stop().then(() => {
+        isScanning = false;
+        btn.textContent = "🔍 読み取り開始";
+        btn.classList.remove("scan-stop");
+        btn.classList.add("scan-start");
       });
     }
 
