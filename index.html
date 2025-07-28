@@ -3,7 +3,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🔍QRれきし帳（QRコード読み取り）</title>
-  <meta name="description" content="QRコードを読み取って、自動で履歴を保存・管理できる無料Webアプリ。スマホ対応、削除・コピー・アクセスもワンタップで簡単操作！">
+  <meta name="description" content="QRコードを読み取って、履歴を自動で保存・管理できる無料Webアプリ。スマホ対応、削除・コピー・アクセスもワンタップで簡単操作！">
   <meta name="keywords" content="QRコード, QR読み取り, 履歴保存, 無料アプリ, スマホ対応, Webアプリ, QRログ">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
   <script>
@@ -98,7 +98,7 @@
   </div>
   <h2>📋 読み取り履歴</h2>
   <p style="text-align:center; font-size: 0.8rem; color: #555;">
-    ＊データはこの端末に保存されます（キャッシュの削除で消える場合があります）。
+    ※データはこの端末に保存されます（キャッシュの削除で消える場合があります）。
   </p>
   <div class="scroll-wrapper">
     <div class="scroll-hint">← スクロールできます →</div>
@@ -133,10 +133,16 @@
         await scanner.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: 250 },
-          (decodedText) => {
+          async (decodedText) => {
+            await scanner.stop();
+            document.getElementById("reader").style.display = "none";
+            document.getElementById("scanBtn").textContent = "🔍 読み取り開始";
+            document.getElementById("scanBtn").classList.remove("scan-stop");
+            document.getElementById("scanBtn").classList.add("scan-start");
+            isScanning = false;
             saveToHistory(decodedText);
           },
-          (error) => { /* 無視 */ }
+          (error) => { }
         );
         isScanning = true;
       } else {
