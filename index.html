@@ -97,6 +97,9 @@
     <button class="delete-all-btn" onclick="clearHistory()">🗑️ 全履歴削除</button>
   </div>
   <h2>📋 読み取り履歴</h2>
+  <p style="text-align:center; font-size: 0.8rem; color: #555;">
+    ＊データはこの端末に保存されます（キャッシュの削除で消える場合があります）。
+  </p>
   <div class="scroll-wrapper">
     <div class="scroll-hint">← スクロールできます →</div>
     <div class="scroll-container">
@@ -111,100 +114,5 @@
   <footer>
     X <a href="https://x.com/kkp_webninja" target="_blank">@kkp_webninja</a>
   </footer>
-  <script>
-    const reader = new Html5Qrcode("reader");
-    let isScanning = false;
-    function toggleScanner() {
-      const btn = document.getElementById("scanBtn");
-      if (!isScanning) {
-        Html5Qrcode.getCameras().then(devices => {
-          const backCamera = devices.find(d => /back|rear|environment/i.test(d.label));
-          const cameraId = backCamera ? backCamera.id : devices[0].id;
-          reader.start(
-            cameraId,
-            { fps: 10, qrbox: 250 },
-            qrCodeMessage => {
-              saveToHistory(qrCodeMessage);
-              stopScanner();
-            },
-            error => {}
-          ).then(() => {
-            isScanning = true;
-            btn.textContent = "🔴 読み取中止";
-            btn.classList.remove("scan-start");
-            btn.classList.add("scan-stop");
-          });
-        }).catch(err => {
-          alert("カメラの起動に失敗しました：" + err);
-        });
-      } else {
-        stopScanner();
-      }
-    }
-    function stopScanner() {
-      const btn = document.getElementById("scanBtn");
-      reader.stop().then(() => {
-        isScanning = false;
-        btn.textContent = "🔍 読み取り開始";
-        btn.classList.remove("scan-stop");
-        btn.classList.add("scan-start");
-      });
-    }
-    function saveToHistory(content) {
-      const now = new Date();
-      const timestamp = now.toLocaleString();
-      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
-      history.unshift({ content, timestamp });
-      localStorage.setItem("qrHistory", JSON.stringify(history));
-      renderHistory();
-    }
-    function renderHistory() {
-      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
-      const body = document.getElementById("historyBody");
-      body.innerHTML = "";
-      const countMap = {};
-      for (let i = history.length - 1; i >= 0; i--) {
-        const item = history[i];
-        const key = item.content;
-        countMap[key] = (countMap[key] || 0) + 1;
-        item._count = countMap[key];
-      }
-      history.forEach((item, index) => {
-        const tr = document.createElement("tr");
-        const countDisplay = item._count > 1 ? `🔁 ${item._count}回目の読み取り` : "";
-        const isUrl = item.content.startsWith("http");
-        tr.innerHTML = `
-          <td>${item.timestamp}</td>
-          <td>${item.content}</td>
-          <td>${countDisplay}</td>
-          <td>
-            ${isUrl
-              ? `<button class="action-btn access-btn" onclick="window.open('${item.content}', '_blank')">🔗 アクセス</button>`
-              : `<button class="action-btn copy-btn" onclick="copyText('${item.content}')">📋 コピー</button>`}
-            <button class="action-btn delete-btn" onclick="deleteEntry(${index})">❌ 削除</button>
-          </td>
-        `;
-        body.appendChild(tr);
-      });
-    }
-    function copyText(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        alert("コピーしました");
-      });
-    }
-    function deleteEntry(index) {
-      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
-      history.splice(index, 1);
-      localStorage.setItem("qrHistory", JSON.stringify(history));
-      renderHistory();
-    }
-    function clearHistory() {
-      if (confirm("すべての履歴を削除しますか？")) {
-        localStorage.removeItem("qrHistory");
-        renderHistory();
-      }
-    }
-    renderHistory();
-  </script>
 </body>
 </html>
