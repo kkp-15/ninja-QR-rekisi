@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🔍QRれきし帳（QRコード読み取り・履歴保存Webアプリ）</title>
+  <title>🔍QRれきし帳（QRコード読み取り）</title>
   <meta name="description" content="QRコードを読み取って、自動で履歴を保存・管理できる無料Webアプリ。スマホ対応、削除・コピー・アクセスもワンタップで簡単操作！">
   <meta name="keywords" content="QRコード, QR読み取り, 履歴保存, 無料アプリ, スマホ対応, Webアプリ, QRログ">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
@@ -12,6 +12,7 @@
     gtag('js', new Date());
     gtag('config', 'G-2LM85GJN0L');
   </script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: "Hiragino Kaku Gothic ProN", sans-serif;
@@ -87,11 +88,10 @@
     }
     #reader { max-width: 400px; margin: 1rem auto; }
   </style>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
   <h1>🔍QRれきし帳（QRコード読み取り）</h1>
-  <div id="reader"></div>
+  <div id="reader" style="display:none;"></div>
   <div style="text-align:center;">
     <button id="scanBtn" class="toggle-scan-btn scan-start" onclick="toggleScanner()">🔍 読み取り開始</button>
     <button class="delete-all-btn" onclick="clearHistory()">🗑️ 全履歴削除</button>
@@ -115,6 +115,87 @@
   </div>
   <footer>
     X <a href="https://x.com/kkp_webninja" target="_blank">@kkp_webninja</a>
-  </footer>
-</body>
+  </footer>  <script>
+    let isScanning = false;
+    let scanner;
+
+    async function toggleScanner() {
+      const readerDiv = document.getElementById("reader");
+      const scanBtn = document.getElementById("scanBtn");
+
+      if (!isScanning) {
+        readerDiv.style.display = "block";
+        scanBtn.textContent = "✖ 読み取り中止";
+        scanBtn.classList.remove("scan-start");
+        scanBtn.classList.add("scan-stop");
+
+        scanner = new Html5Qrcode("reader");
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          (decodedText) => {
+            saveToHistory(decodedText);
+          },
+          (error) => { /* 無視 */ }
+        );
+        isScanning = true;
+      } else {
+        await scanner.stop();
+        readerDiv.style.display = "none";
+        scanBtn.textContent = "🔍 読み取り開始";
+        scanBtn.classList.remove("scan-stop");
+        scanBtn.classList.add("scan-start");
+        isScanning = false;
+      }
+    }
+
+    function saveToHistory(text) {
+      const now = new Date().toLocaleString();
+      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+      const count = history.filter(h => h.text === text).length + 1;
+      history.push({ time: now, text: text, count });
+      localStorage.setItem("qrHistory", JSON.stringify(history));
+      updateHistoryTable();
+    }
+
+    function updateHistoryTable() {
+      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+      const tbody = document.getElementById("historyBody");
+      tbody.innerHTML = "";
+      if (history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #888;">読み取り履歴がまだありません</td></tr>';
+        return;
+      }
+      history.forEach((entry, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${entry.time}</td>
+          <td>${entry.text}</td>
+          <td>${entry.count}回目</td>
+          <td>
+            <button class="action-btn access-btn" onclick="window.open('${entry.text}', '_blank')">アクセス</button>
+            <button class="action-btn copy-btn" onclick="navigator.clipboard.writeText('${entry.text}')">コピー</button>
+            <button class="action-btn delete-btn" onclick="deleteEntry(${index})">削除</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function deleteEntry(index) {
+      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+      history.splice(index, 1);
+      localStorage.setItem("qrHistory", JSON.stringify(history));
+      updateHistoryTable();
+    }
+
+    function clearHistory() {
+      if (confirm("本当にすべて削除しますか？")) {
+        localStorage.removeItem("qrHistory");
+        updateHistoryTable();
+      }
+    }
+
+    window.onload = updateHistoryTable;
+  </script></body>
 </html>
