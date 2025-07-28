@@ -20,7 +20,7 @@
       padding: 1rem;
       margin: 0;
       color: #333;
-      padding-bottom: 80px;
+      padding-bottom: 100px;
     }
     h1 {
       text-align: center;
@@ -87,6 +87,14 @@
       text-decoration: none;
     }
     #reader { max-width: 400px; margin: 1rem auto; }
+    .pagination {
+      text-align: center;
+      margin: 1rem 0;
+    }
+    .pagination button {
+      padding: 0.3rem 0.6rem;
+      margin: 0 0.2rem;
+    }
   </style>
 </head>
 <body>
@@ -113,11 +121,14 @@
       </table>
     </div>
   </div>
+  <div class="pagination" id="pagination"></div>
   <footer>
     X <a href="https://x.com/kkp_webninja" target="_blank">@kkp_webninja</a>
   </footer>  <script>
     let isScanning = false;
     let scanner;
+    let currentPage = 1;
+    const entriesPerPage = 20;
 
     async function toggleScanner() {
       const readerDiv = document.getElementById("reader");
@@ -135,10 +146,10 @@
           { fps: 10, qrbox: 250 },
           async (decodedText) => {
             await scanner.stop();
-            document.getElementById("reader").style.display = "none";
-            document.getElementById("scanBtn").textContent = "🔍 読み取り開始";
-            document.getElementById("scanBtn").classList.remove("scan-stop");
-            document.getElementById("scanBtn").classList.add("scan-start");
+            readerDiv.style.display = "none";
+            scanBtn.textContent = "🔍 読み取り開始";
+            scanBtn.classList.remove("scan-stop");
+            scanBtn.classList.add("scan-start");
             isScanning = false;
             saveToHistory(decodedText);
           },
@@ -170,18 +181,23 @@
       const count = history.filter(h => h.text === text).length + 1;
       history.push({ time: now, text: text, count });
       localStorage.setItem("qrHistory", JSON.stringify(history));
+      currentPage = 1;
       updateHistoryTable();
     }
 
     function updateHistoryTable() {
-      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]");
+      const history = JSON.parse(localStorage.getItem("qrHistory") || "[]").reverse();
       const tbody = document.getElementById("historyBody");
+      const start = (currentPage - 1) * entriesPerPage;
+      const end = start + entriesPerPage;
+      const currentPageEntries = history.slice(start, end);
+
       tbody.innerHTML = "";
-      if (history.length === 0) {
+      if (currentPageEntries.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #888;">読み取り履歴がまだありません</td></tr>';
         return;
       }
-      history.forEach((entry, index) => {
+      currentPageEntries.forEach((entry, index) => {
         const isLink = isValidURL(entry.text);
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -191,11 +207,28 @@
           <td>
             ${isLink ? `<button class="action-btn access-btn" onclick="window.open('${entry.text}', '_blank')">アクセス</button>` : ""}
             <button class="action-btn copy-btn" onclick="navigator.clipboard.writeText('${entry.text}')">コピー</button>
-            <button class="action-btn delete-btn" onclick="deleteEntry(${index})">削除</button>
+            <button class="action-btn delete-btn" onclick="deleteEntry(${history.length - 1 - (start + index)})">削除</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
+      renderPagination(history.length);
+    }
+
+    function renderPagination(totalEntries) {
+      const paginationDiv = document.getElementById("pagination");
+      paginationDiv.innerHTML = "";
+      const totalPages = Math.ceil(totalEntries / entriesPerPage);
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.onclick = () => {
+          currentPage = i;
+          updateHistoryTable();
+        };
+        if (i === currentPage) btn.disabled = true;
+        paginationDiv.appendChild(btn);
+      }
     }
 
     function deleteEntry(index) {
