@@ -133,6 +133,7 @@
     async function toggleScanner() {
       const readerDiv = document.getElementById("reader");
       const scanBtn = document.getElementById("scanBtn");
+      scanBtn.disabled = true;
 
       if (!isScanning) {
         readerDiv.style.display = "block";
@@ -141,27 +142,35 @@
         scanBtn.classList.add("scan-stop");
 
         scanner = new Html5Qrcode("reader");
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          async (decodedText) => {
-            await scanner.stop();
-            readerDiv.style.display = "none";
-            scanBtn.textContent = "🔍 読み取り開始";
-            scanBtn.classList.remove("scan-stop");
-            scanBtn.classList.add("scan-start");
-            isScanning = false;
-            saveToHistory(decodedText);
-          },
-          (error) => { }
-        );
-        isScanning = true;
+        try {
+          await scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            async (decodedText) => {
+              await scanner.stop();
+              readerDiv.style.display = "none";
+              scanBtn.textContent = "🔍 読み取り開始";
+              scanBtn.classList.remove("scan-stop");
+              scanBtn.classList.add("scan-start");
+              scanBtn.disabled = false;
+              isScanning = false;
+              saveToHistory(decodedText);
+            },
+            (error) => {}
+          );
+          isScanning = true;
+        } catch (e) {
+          scanBtn.disabled = false;
+        }
       } else {
-        await scanner.stop();
+        try {
+          await scanner.stop();
+        } catch (e) {}
         readerDiv.style.display = "none";
         scanBtn.textContent = "🔍 読み取り開始";
         scanBtn.classList.remove("scan-stop");
         scanBtn.classList.add("scan-start");
+        scanBtn.disabled = false;
         isScanning = false;
       }
     }
